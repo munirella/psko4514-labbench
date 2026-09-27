@@ -228,7 +228,7 @@
 <section class="tab" id="loop">
   <h2>Döngü (loop) gerçekte ne yapıyor</h2>
   <p class="lede">Koşul dosyanızda (conditions file) 10 satır var. Döngü onu tekrarlar. Bu dört ayar
-  hangi sırayı alacağınızı belirler — ve biri, dosyaya kurduğunuz dengeyi sessizce bozar.</p>
+  hangi sırayı alacağınızı belirler — ve biri, dosyaya kurduğunuz dengeyi görev boyunca eşit yaymaz.</p>
 
   <div class="modes">
     <button data-mode="sequential" aria-pressed="true">sıralı (sequential)</button>
@@ -245,17 +245,18 @@
   <div class="loopbars" id="loopbars"></div>
   <p class="note" style="margin-top:9px">Her çubuk bir deneme. Yüksekliği, koşul dosyasının
   o satırından alınan bir değer — uyaran süresi, zorluk, tasarımınız neyi değiştiriyorsa.
-  Kesikli çizgiler tekrarları ayırır.</p>
+  Kesikli çizgiler tekrarları ayırır; tam rastgelede gerçek bir tekrar sınırı olmadığı için her 10 denemeyi ayırır.</p>
 
-  <h3 style="margin-top:26px">Her satır kaç kez kullanıldı</h3>
+  <h3 style="margin-top:26px">Her satır kaç kez kullanıldı <span class="note" style="font-weight:400">(parantez içinde: her tekrarda ya da her 10 denemede)</span></h3>
   <div class="counts" id="counts"></div>
   <div class="verdict" id="loopVerdict"></div>
 
   <div class="callout">
-    <b>Yerine koymadan örnekleme.</b> Satırları bir kutudaki satranç taşları gibi düşünün: kutuyu sallar,
-    taşları tek tek çekersiniz ve çektiğiniz taş kutuya geri dönmez. <em>random</em> tam olarak bunu yapar —
-    her satır her tekrarda tam bir kez gelir, böylece dosyaya kurduğunuz denge korunur.
-    <em>Full random</em> taşları geri koyar ve denge kaybolur.
+    <b>İki ayar da her satırı toplamda eşit sayıda gösterir; fark dengenin nerede sağlandığı.</b>
+    Satırları bir torbadaki taşlar gibi düşünün. <em>random</em> her tekrar için torbaya her satırdan bir taş koyar,
+    karıştırır ve hepsini çeker: her satır her tekrarda tam bir kez gelir, denge görevin her bölümünde korunur.
+    <em>Full random</em> bütün tekrarların taşlarını tek bir torbaya koyup bir kez karıştırır: toplam sayılar yine eşit,
+    ama bir koşul görevin başına ya da sonuna yığılabilir. Projelerde <em>random</em> kullanın.
   </div>
 </section>
 
@@ -449,15 +450,31 @@ const VALUES = Array.from({ length: ROWS }, (_, i) => 22 + i * 8); // a clean ra
 let mode = 'sequential';
 const fixedOrder = shuffle([...Array(ROWS).keys()]);
 
-function buildOrder(reps) {
-  const out = [];
-  for (let r = 0; r < reps; r++) {
-    if (r > 0) out.push(null);                       // separator
-    if (mode === 'sequential') out.push(...[...Array(ROWS).keys()]);
-    else if (mode === 'fixed') out.push(...fixedOrder);
-    else if (mode === 'random') out.push(...shuffle([...Array(ROWS).keys()]));
-    else for (let i = 0; i < ROWS; i++) out.push(Math.floor(Math.random() * ROWS));
+const L = {
+  row: 'satır',
+  txt: {
+    sequential: (r) => 'Dosya her tekrarda aynı biçimde, yukarıdan aşağıya dolaşılır. Her satır her tekrarda bir kez, toplamda ' + r + ' kez kullanılır. Sıra tasarımın bir parçasıysa bunu kullanın — örneğin giderek uzayan bir sayı dizisi.',
+    fixed: (r) => 'Bir karışık sıra, sonra aynı karışık sıra yeniden. Katılımcıya rastgele görünür ama her katılımcı tam olarak aynı diziyi alır. PsychoPy\'de ayrı bir ayar değil: koşul dosyasını bir kez karıştırıp döngüyü sequential çalıştırırsınız.',
+    random: (r) => 'Her tekrarda yeniden karıştırılır: her satır her tekrarda tam bir kez gelir (parantez içindeki sayıların hepsi 1). Denge görevin başında, ortasında ve sonunda aynı. Projeler için önerdiğimiz ayar bu.',
+    full: (r, k) => r === 1
+      ? 'Tek tekrarda tam rastgele ile rastgele aynı şeydir. Farkı görmek için tekrar sayısını artırın.'
+      : 'Bütün tekrarların denemeleri tek bir torbaya konup bir kez karıştırılır. Her satır toplamda yine tam <b>' + r + '</b> kez geldi — toplam denge korunuyor. Ama 10\'luk bölümlere bakın: <b>' + k + '</b> satır bazı bölümlerde birden fazla, bazılarında hiç gelmedi. Görevin başı, ortası ve sonu artık aynı koşul karışımını içermiyor; alıştırma ve yorgunluk koşullarla kısmen örtüşebilir.'
   }
+};
+function buildOrder(reps) {
+  let seq = [];
+  if (mode === 'full') {
+    for (let r = 0; r < reps; r++) for (let i = 0; i < ROWS; i++) seq.push(i);
+    shuffle(seq);                                   // one bag, shuffled once (PsychoPy fullRandom)
+  } else {
+    for (let r = 0; r < reps; r++) {
+      if (mode === 'sequential') seq.push(...[...Array(ROWS).keys()]);
+      else if (mode === 'fixed') seq.push(...fixedOrder);
+      else seq.push(...shuffle([...Array(ROWS).keys()]));
+    }
+  }
+  const out = [];
+  seq.forEach((v, k) => { if (k > 0 && k % ROWS === 0) out.push(null); out.push(v); });
   return out;
 }
 function drawLoop() {
@@ -466,31 +483,30 @@ function drawLoop() {
   const wrapEl = $('loopbars');
   wrapEl.innerHTML = '';
   const counts = new Array(ROWS).fill(0);
+  const per = Array.from({ length: ROWS }, () => new Array(reps).fill(0));
+  let block = 0;
   order.forEach(i => {
     const d = document.createElement('div');
-    if (i === null) { d.className = 'lb sep'; wrapEl.appendChild(d); return; }
-    counts[i]++;
+    if (i === null) { block++; d.className = 'lb sep'; wrapEl.appendChild(d); return; }
+    counts[i]++; per[i][block]++;
     d.className = 'lb';
     d.style.height = (VALUES[i] / VALUES[ROWS - 1] * 100) + '%';
-    d.title = 'satır ' + (i + 1);
+    d.title = L.row + ' ' + (i + 1);
     wrapEl.appendChild(d);
   });
   const cc = $('counts');
   cc.innerHTML = '';
+  let unevenRows = 0;
   counts.forEach((c, i) => {
+    const bad = per[i].some(x => x !== 1);
+    if (bad) unevenRows++;
     const s = document.createElement('div');
-    s.className = 'cchip' + (c === reps ? '' : ' off');
-    s.innerHTML = 'satır ' + (i + 1) + ' · <b>' + c + '×</b>';
+    s.className = 'cchip' + (bad ? ' off' : '');
+    s.innerHTML = L.row + ' ' + (i + 1) + ' · <b>' + c + '×</b>' + (reps > 1 ? ' (' + per[i].join('·') + ')' : '');
     cc.appendChild(s);
   });
-  const uneven = counts.some(c => c !== reps);
-  const txt = {
-    sequential: 'Dosya her tekrarda aynı biçimde, yukarıdan aşağıya dolaşılır. Her satır tam ' + reps + ' kez kullanılır. Sıra tasarımın bir parçasıysa bunu kullanın — örneğin giderek uzayan bir sayı dizisi.',
-    fixed: 'Bir karışık sıra, sonra aynı karışık sıra yeniden. Katılımcıya rastgele görünür ama her katılımcı tam olarak aynı diziyi alır — sıranın kendisinin sabit tutulması gerektiğinde istediğiniz budur.',
-    random: 'Her tekrarda yeniden karıştırılır ama yine yerine koymadan örneklenir: her satır her tekrarda tam bir kez gelir. Dosyada ne dengelediyseniz dengeli kalır.',
-    full: 'Dosyanın tamamından yerine koyarak çekilir. Sayılara bakın — bazı satırlar ' + Math.max(...counts) + ' kez, bazıları ' + Math.min(...counts) + ' kez geldi. Koşul dosyasına kurduğunuz denge kayboldu.'
-  }[mode];
-  $('loopVerdict').innerHTML = txt + (uneven && mode !== 'full' ? '' : '');
+  let txt = L.txt[mode](reps, unevenRows);
+  $('loopVerdict').innerHTML = txt;
 }
 document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
   mode = b.dataset.mode;
