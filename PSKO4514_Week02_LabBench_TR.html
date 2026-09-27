@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2. Hafta Lab Bench — Bilişsel Deney Geliştirme</title>
+<style>
+  :root{
+    --deep:#065A82; --teal:#1C7293; --mid:#21295C; --ink:#16203D;
+    --amber:#D98A1F; --amber-soft:#FDF3E3;
+    --grey:#5B6478; --line:#D5DCE6; --panel:#EEF3F8; --page:#FFFFFF;
+    --field:#141414;
+    --red:#E23B3B; --green:#2FA84F; --blue:#3B72E2; --yellow:#E3B21A;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:Georgia,Cambria,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);background:var(--page);
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 72px}
+
+  header.top{border-bottom:1px solid var(--line);background:var(--page);
+    position:sticky;top:0;z-index:20}
+  .top-inner{max-width:1080px;margin:0 auto;padding:18px 24px 0;
+    display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;justify-content:space-between}
+  h1{font-family:var(--serif);font-size:22px;font-weight:700;margin:0;letter-spacing:-.2px}
+  .course{font-size:13px;color:var(--grey);font-variant-numeric:tabular-nums}
+  nav{max-width:1080px;margin:0 auto;padding:14px 24px 0;display:flex;gap:2px;flex-wrap:wrap}
+  nav button{font:inherit;font-size:14px;border:1px solid transparent;border-bottom:none;
+    background:none;color:var(--grey);padding:9px 16px;cursor:pointer;
+    border-radius:6px 6px 0 0;margin-bottom:-1px}
+  nav button:hover{color:var(--ink);background:var(--panel)}
+  nav button[aria-selected="true"]{background:var(--page);border-color:var(--line);
+    color:var(--ink);font-weight:600}
+  nav button:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+
+  section.tab{display:none;padding-top:32px}
+  section.tab.on{display:block}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 6px;font-weight:700}
+  .lede{color:var(--grey);max-width:66ch;margin:0 0 28px;font-size:15px}
+  h3{font-size:15px;margin:0 0 10px;font-weight:600}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px}
+  .note{font-size:13px;color:var(--grey)}
+  .btn{font:inherit;font-size:14px;font-weight:600;border-radius:6px;cursor:pointer;
+    padding:10px 18px;border:1px solid var(--deep);background:var(--deep);color:#fff}
+  .btn:hover{background:#054d70}
+  .btn.ghost{background:transparent;color:var(--deep)}
+  .btn.ghost:hover{background:var(--panel)}
+  .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .btn.sm{padding:7px 13px;font-size:13px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .ctrl{margin-bottom:16px}
+  .ctrl label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+  .ctrl input[type=range]{width:100%;accent-color:var(--teal)}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+  th{font-weight:600;color:var(--grey);font-size:12px}
+  td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .callout{background:var(--amber-soft);border:1px solid #F0D6A8;border-radius:8px;
+    padding:16px 18px;font-size:14px;color:#6B4708;margin-top:26px}
+  .callout b{color:#8A5A10}
+  .verdict{margin-top:16px;font-size:14px}
+  .verdict b{font-family:var(--mono)}
+  .split{display:grid;grid-template-columns:290px 1fr;gap:24px;align-items:start}
+  @media(max-width:860px){.split{grid-template-columns:1fr}}
+
+  /* ---------- module 1: counterbalancing ---------- */
+  .cells{display:grid;gap:8px;margin-top:4px}
+  .cell{border:1px solid var(--line);border-radius:7px;padding:10px 12px;background:var(--page)}
+  .cell .lab{font-size:12px;color:var(--grey);margin-bottom:6px}
+  .cell .cnt{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--deep);
+    line-height:1.1;font-variant-numeric:tabular-nums}
+  .cell .track{height:6px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}
+  .cell .track i{display:block;height:100%;background:var(--teal);width:0;transition:width .35s}
+  .cell.hot{border-color:#F0D6A8;background:var(--amber-soft)}
+  .cell.hot .cnt{color:#8A5A10}
+  .cell.hot .track i{background:var(--amber)}
+  .scoreline{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:20px}
+  @media(max-width:720px){.scoreline{grid-template-columns:1fr}}
+  .stat{border:1px solid var(--line);border-radius:8px;padding:16px}
+  .stat .v{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--deep);
+    font-variant-numeric:tabular-nums;line-height:1.2}
+  .stat .k{font-size:13px;color:var(--grey);margin-top:2px}
+  .stat.hero{background:var(--mid);border-color:var(--mid)}
+  .stat.hero .v{color:var(--amber)}
+  .stat.hero .k{color:#B8C6E0}
+
+  /* ---------- module 2: loop ordering ---------- */
+  .loopbars{display:flex;align-items:flex-end;gap:2px;height:170px;
+    border-bottom:1px solid var(--line);padding:0 2px;overflow-x:auto}
+  .lb{flex:1 0 8px;min-width:6px;background:var(--teal);border-radius:2px 2px 0 0;
+    transition:height .35s}
+  .lb.sep{background:none;border-left:1px dashed var(--line);flex:0 0 1px;min-width:1px;height:100%!important}
+  .replabs{display:flex;gap:2px;padding-top:8px;font-size:11px;color:var(--grey)}
+  .counts{display:flex;gap:6px;flex-wrap:wrap;margin-top:22px}
+  .cchip{border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;
+    font-family:var(--mono);background:var(--page)}
+  .cchip b{color:var(--deep)}
+  .cchip.off{border-color:#F0D6A8;background:var(--amber-soft)}
+  .cchip.off b{color:#8A5A10}
+  .modes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .modes button{font:inherit;font-size:13.5px;padding:8px 14px;border-radius:6px;
+    border:1px solid var(--line);background:var(--page);color:var(--grey);cursor:pointer}
+  .modes button:hover{border-color:var(--teal);color:var(--ink)}
+  .modes button[aria-pressed="true"]{background:var(--deep);border-color:var(--deep);
+    color:#fff;font-weight:600}
+
+  /* ---------- module 3: confound hunter ---------- */
+  .qcard{border:1px solid var(--line);border-radius:8px;padding:22px}
+  .qmeta{font-size:12px;color:var(--grey);margin-bottom:10px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .qtext{font-size:16px;margin:0 0 18px;max-width:70ch}
+  .qtext em{color:var(--deep);font-style:normal;font-weight:600}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{font:inherit;font-size:14px;text-align:left;padding:12px 14px;border-radius:7px;
+    border:1px solid var(--line);background:var(--page);color:var(--ink);cursor:pointer}
+  .opt:hover:not([disabled]){border-color:var(--teal);background:var(--panel)}
+  .opt:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  .opt[disabled]{cursor:default}
+  .opt.right{border-color:var(--green);background:#EFF9F1}
+  .opt.wrong{border-color:var(--red);background:#FDF0F0}
+  .fb{margin-top:16px;font-size:14px;padding:14px 16px;border-radius:7px;
+    background:var(--panel);border:1px solid var(--line);display:none}
+  .fb.on{display:block}
+  .fb b{color:var(--ink)}
+  /* ---------- module 4: budget ---------- */
+  .fac{display:grid;grid-template-columns:1fr 92px;gap:8px;align-items:center;margin-bottom:9px}
+  .fac input[type=text]{font:inherit;font-size:13.5px;padding:7px 9px;border:1px solid var(--line);
+    border-radius:6px;background:var(--page);color:var(--ink);width:100%}
+  .fac select{width:100%}
+  .fac.off input,.fac.off select{opacity:.4}
+  .faclab{font-size:11px;color:var(--grey);margin-bottom:4px;display:flex;justify-content:space-between}
+  .gauges{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+  @media(max-width:720px){.gauges{grid-template-columns:1fr}}
+  .gauge{border:1px solid var(--line);border-radius:8px;padding:16px}
+  .gauge.ok{border-color:#BBDCC4;background:#F2FAF4}
+  .gauge.bad{border-color:#F0D6A8;background:var(--amber-soft)}
+  .gauge .v{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1.15;
+    font-variant-numeric:tabular-nums;color:var(--deep)}
+  .gauge.ok .v{color:#1F7A3D}
+  .gauge.bad .v{color:#8A5A10}
+  .gauge .k{font-size:13px;color:var(--grey);margin-top:2px}
+  .gauge .t{font-size:12px;margin-top:9px}
+  .meter{height:9px;background:var(--line);border-radius:5px;margin-top:11px;position:relative;overflow:hidden}
+  .meter i{display:block;height:100%;background:#2FA84F;width:0;transition:width .3s}
+  .meter.bad i{background:var(--amber)}
+  .limit{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.55}
+  .rows{max-height:250px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+  .rows table{margin:0}
+  .rows th{position:sticky;top:0;background:var(--page)}
+  .sum{display:flex;gap:26px;flex-wrap:wrap;margin:14px 0 0;font-size:13px;color:var(--grey)}
+  .sum b{color:var(--ink);font-family:var(--mono)}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <h1>2. Hafta Lab Bench</h1>
+    <div class="course">PSKO&nbsp;4514 · Bilişsel Deney Geliştirme</div>
+  </div>
+  <nav>
+    <button data-tab="cb" aria-selected="true">Karşı dengeleme</button>
+    <button data-tab="loop" aria-selected="false">Deneme sırası</button>
+    <button data-tab="hunt" aria-selected="false">Kusuru bul</button>
+    <button data-tab="budget" aria-selected="false">Sığar mı?</button>
+  </nav>
+</header>
+
+<div class="wrap">
+
+<!-- ============================ MODULE 1 ============================ -->
+<section class="tab on" id="cb">
+  <h2>Rastgeleleştirme sihir yapamaz</h2>
+  <p class="lede">İnsanları koşullara rastgele atamak işe yarar — yeterince insan varsa.
+  Katılımcı sayısını bu sınıfın mevcuduna ayarlayın ve gerçekte ne olduğunu görün.</p>
+
+  <div class="split">
+    <div class="panel">
+      <div class="ctrl">
+        <label>A faktörü — düzey sayısı <span class="num" id="aV">2</span></label>
+        <input type="range" id="aR" min="2" max="4" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>B faktörü — düzey sayısı <span class="num" id="bV">2</span></label>
+        <input type="range" id="bR" min="1" max="3" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Katılımcı sayısı <span class="num" id="nV">14</span></label>
+        <input type="range" id="nR" min="4" max="60" step="1" value="14">
+      </div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn" id="randBtn">Rastgele ata</button>
+        <button class="btn ghost" id="cbBtn">Karşı dengele</button>
+      </div>
+      <div class="row" style="margin-top:9px">
+        <button class="btn ghost sm" id="rand20">20 kez rastgele</button>
+      </div>
+      <p class="note" style="margin-top:16px">Projenizde bu iki faktör
+      <b>tuş eşlemesi</b> ve <b>blok sırası</b> gibi şeyler olur — ilgilenmediğiniz ama
+      koşullarınızla örtüşmemesi gereken istenmeyen değişkenler (nuisance variables).</p>
+    </div>
+
+    <div>
+      <h3 id="cbHead">Hücre başına katılımcı</h3>
+      <div class="cells" id="cells"></div>
+      <div class="scoreline">
+        <div class="stat"><div class="v" id="cellsV">4</div><div class="k">doldurulacak hücre</div></div>
+        <div class="stat hero"><div class="v" id="impV">—</div><div class="k">hücreler arası en büyük fark</div></div>
+      </div>
+      <div class="verdict" id="cbVerdict"></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Pratik kural.</b> Rastgeleleştirme istenmeyen değişkenleri <em>ortalamada, çok sayıda
+    katılımcı üzerinden</em> dengeler. Karşı dengeleme onları <em>yapısı gereği, her seferinde</em> dengeler.
+    Sınıf büyüklüğünde bir örneklemde ortalamanın gelmesini bekleyemezsiniz.
+  </div>
+</section>
+
+<!-- ============================ MODULE 2 ============================ -->
+<section class="tab" id="loop">
+  <h2>Döngü (loop) gerçekte ne yapıyor</h2>
+  <p class="lede">Koşul dosyanızda (conditions file) 10 satır var. Döngü onu tekrarlar. Bu dört ayar
+  hangi sırayı alacağınızı belirler — ve biri, dosyaya kurduğunuz dengeyi sessizce bozar.</p>
+
+  <div class="modes">
+    <button data-mode="sequential" aria-pressed="true">sıralı (sequential)</button>
+    <button data-mode="fixed" aria-pressed="false">sabit rastgele (fixed random)</button>
+    <button data-mode="random" aria-pressed="false">rastgele (random)</button>
+    <button data-mode="full" aria-pressed="false">tam rastgele (full random)</button>
+  </div>
+
+  <div class="ctrl" style="max-width:290px">
+    <label>Dosyanın tekrar sayısı (nReps) <span class="num" id="repV">5</span></label>
+    <input type="range" id="repR" min="1" max="5" step="1" value="5">
+  </div>
+
+  <div class="loopbars" id="loopbars"></div>
+  <p class="note" style="margin-top:9px">Her çubuk bir deneme. Yüksekliği, koşul dosyasının
+  o satırından alınan bir değer — uyaran süresi, zorluk, tasarımınız neyi değiştiriyorsa.
+  Kesikli çizgiler tekrarları ayırır.</p>
+
+  <h3 style="margin-top:26px">Her satır kaç kez kullanıldı</h3>
+  <div class="counts" id="counts"></div>
+  <div class="verdict" id="loopVerdict"></div>
+
+  <div class="callout">
+    <b>Yerine koymadan örnekleme.</b> Satırları bir kutudaki satranç taşları gibi düşünün: kutuyu sallar,
+    taşları tek tek çekersiniz ve çektiğiniz taş kutuya geri dönmez. <em>random</em> tam olarak bunu yapar —
+    her satır her tekrarda tam bir kez gelir, böylece dosyaya kurduğunuz denge korunur.
+    <em>Full random</em> taşları geri koyar ve denge kaybolur.
+  </div>
+</section>
+
+<!-- ============================ MODULE 3 ============================ -->
+<section class="tab" id="hunt">
+  <h2>Kusuru bul</h2>
+  <p class="lede">Yedi tasarım. Her biri ya bozuk ya da en azından yapamayacağı bir şeyi yapması
+  bekleniyor. Yanıtı okumadan önce neyin yanlış olduğunu söyleyin.</p>
+
+  <div class="qcard">
+    <div class="qmeta">
+      <span>Tasarım <span class="num" id="qNum">1</span> / <span class="num" id="qTot">7</span></span>
+      <span>Şu ana kadar doğru: <span class="num" id="qScore">0</span></span>
+    </div>
+    <p class="qtext" id="qText"></p>
+    <div class="opts" id="qOpts"></div>
+    <div class="fb" id="qFb"></div>
+    <div class="row" style="margin-top:18px">
+      <button class="btn" id="nextBtn" disabled>Sonraki tasarım</button>
+      <button class="btn ghost" id="restartBtn">Baştan başla</button>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>İki ayrı sorun.</b> Karıştırıcı değişken (confound), istemediğiniz bir şeyin koşullarınızla
+    örtüşmesi demektir; sonucun birden fazla açıklaması olur. Düşük güç (low power) ise tasarımın temiz
+    ama etkiyi görmek için fazla küçük ya da kısa olması demektir. İlkini tasarımı değiştirerek düzeltirsiniz;
+    ikincisini deneme ya da katılımcı ekleyerek. Her sorunu karıştırıcı değişken sanmayın.
+  </div>
+</section>
+
+<!-- ============================ MODULE 4 ============================ -->
+<section class="tab" id="budget">
+  <h2>Tek oturuma sığar mı?</h2>
+  <p class="lede">Tasarımınız koşul dosyasının kaç satır olacağına karar verir. Satırlar, tekrarlar ve
+  bir denemenin uzunluğu görevin ne kadar süreceğine karar verir. Burada iki şey birbirine karşı çekiyor — ikisini de okuyun.</p>
+
+  <div class="split">
+    <div class="panel">
+      <h3>Faktörleriniz</h3>
+      <div class="faclab"><span>Faktör 1 — manipülasyonunuz</span><span>düzey</span></div>
+      <div class="fac"><input type="text" id="f0n" value="uyumluluk"><select id="f0l"></select></div>
+      <div class="faclab"><span>Faktör 2 — değiştirdiğiniz başka bir şey</span><span>düzey</span></div>
+      <div class="fac"><input type="text" id="f1n" value="mürekkep rengi"><select id="f1l"></select></div>
+      <div class="faclab"><span>Faktör 3 — isteğe bağlı</span><span>düzey</span></div>
+      <div class="fac"><input type="text" id="f2n" value=""><select id="f2l"></select></div>
+
+      <div class="ctrl" style="margin-top:18px">
+        <label>Dosyanın tekrar sayısı (nReps) <span class="num" id="repV2">8</span></label>
+        <input type="range" id="repR2" min="1" max="20" step="1" value="8">
+      </div>
+      <div class="ctrl">
+        <label>Deneme başına saniye <span class="num" id="sptV">2.5</span></label>
+        <input type="range" id="sptR" min="1" max="5" step="0.1" value="2.5">
+      </div>
+      <div class="ctrl">
+        <label>Alıştırma denemeleri <span class="num" id="pracV">8</span></label>
+        <input type="range" id="pracR" min="0" max="24" step="2" value="8">
+      </div>
+      <div class="ctrl">
+        <label>Yönerge ve molalar <span class="num" id="ovV">40 s</span></label>
+        <input type="range" id="ovR" min="0" max="120" step="10" value="40">
+      </div>
+      <div class="ctrl">
+        <label>Süre sınırı <span class="num" id="limV">4,0 dk</span></label>
+        <input type="range" id="limR" min="120" max="600" step="30" value="240">
+      </div>
+    </div>
+
+    <div>
+      <div class="gauges">
+        <div class="gauge" id="gTime">
+          <div class="v" id="durV">—</div>
+          <div class="k">görev ne kadar sürüyor</div>
+          <div class="meter" id="durMeter"><i></i><span class="limit"></span></div>
+          <div class="t" id="durT"></div>
+        </div>
+        <div class="gauge" id="gTrials">
+          <div class="v" id="perV">—</div>
+          <div class="k" id="perK">faktör 1'in her düzeyi için deneme</div>
+          <div class="meter" id="perMeter"><i></i><span class="limit"></span></div>
+          <div class="t" id="perT"></div>
+        </div>
+      </div>
+
+      <h3>Bunun ürettiği koşul dosyası</h3>
+      <div class="rows"><table id="condTable"><thead></thead><tbody></tbody></table></div>
+      <div class="sum" id="sumLine"></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>İki gösterge aslında aynı kaydırıcı.</b> Görevi kısaltın, koşul başına deneme de onunla birlikte düşer;
+    deneme ekleyin, oturum taşar. Çıkış yolu genellikle daha az faktördür, daha az deneme değil — her
+    fazladan faktör satırları çarpar ve çoğu, onun yerine sabit tutabileceğiniz şeylerdir.
+  </div>
+</section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============ tabs ============ */
+const tabs = document.querySelectorAll('nav button');
+tabs.forEach(b => b.addEventListener('click', () => {
+  tabs.forEach(x => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('on', s.id === b.dataset.tab));
+}));
+
+const $ = id => document.getElementById(id);
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ============ MODULE 1 : counterbalancing ============ */
+const A = $('aR'), B = $('bR'), N = $('nR');
+let lastMode = null;
+
+function labels() {
+  const na = +A.value, nb = +B.value, out = [];
+  for (let i = 0; i < na; i++)
+    for (let j = 0; j < nb; j++)
+      out.push(nb === 1 ? 'A' + (i + 1) : 'A' + (i + 1) + ' · B' + (j + 1));
+  return out;
+}
+function drawCells(counts, mode) {
+  const labs = labels(), n = +N.value;
+  const ideal = n / labs.length;
+  const grid = $('cells');
+  grid.style.gridTemplateColumns = 'repeat(' + Math.min(labs.length, 4) + ',1fr)';
+  const max = Math.max(1, ...(counts || [1]));
+  grid.innerHTML = '';
+  labs.forEach((l, i) => {
+    const c = counts ? counts[i] : 0;
+    const hot = counts && Math.abs(c - ideal) > 1;
+    const d = document.createElement('div');
+    d.className = 'cell' + (hot ? ' hot' : '');
+    d.innerHTML = '<div class="lab">' + l + '</div><div class="cnt">' +
+      (counts ? c : '—') + '</div><div class="track"><i style="width:' +
+      (counts ? (c / max * 100) : 0) + '%"></i></div>';
+    grid.appendChild(d);
+  });
+  $('cellsV').textContent = labs.length;
+  if (!counts) { $('impV').textContent = '—'; $('cbVerdict').textContent = ''; return; }
+  const gap = Math.max(...counts) - Math.min(...counts);
+  $('impV').textContent = gap;
+  $('cbHead').textContent = mode === 'cb' ? 'Hücre başına katılımcı — karşı dengelenmiş' :
+                                            'Hücre başına katılımcı — rastgele atama';
+  if (mode === 'cb')
+    $('cbVerdict').innerHTML = 'Sırayla dağıtıldı, bu yüzden fark <b>' + gap +
+      '</b>. Sınıf büyüklüğü ne olursa olsun 1\'den fazla olamaz.';
+  else if (gap === 0)
+    $('cbVerdict').innerHTML = 'Bu sefer şans yüzümüze güldü: fark <b>0</b>. Düğmeye bir kez daha basın.';
+  else
+    $('cbVerdict').innerHTML = 'Bir hücrede diğerinden <b>' + gap + '</b> katılımcı fazla var. ' +
+      'Hiçbir şey ters gitmedi — n&nbsp;=&nbsp;' + N.value + ' iken rastgele atama bunu yapar.';
+}
+function randomCounts() {
+  const k = labels().length, n = +N.value, c = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) c[Math.floor(Math.random() * k)]++;
+  return c;
+}
+function cbCounts() {
+  const k = labels().length, n = +N.value, c = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) c[i % k]++;
+  return c;
+}
+$('randBtn').addEventListener('click', () => { lastMode = 'rand'; drawCells(randomCounts(), 'rand'); });
+$('cbBtn').addEventListener('click', () => { lastMode = 'cb'; drawCells(cbCounts(), 'cb'); });
+$('rand20').addEventListener('click', () => {
+  let worst = -1, worstC = null, sum = 0;
+  for (let r = 0; r < 20; r++) {
+    const c = randomCounts(), g = Math.max(...c) - Math.min(...c);
+    sum += g;
+    if (g > worst) { worst = g; worstC = c; }
+  }
+  lastMode = 'rand';
+  drawCells(worstC, 'rand');
+  $('cbVerdict').innerHTML = 'n&nbsp;=&nbsp;' + N.value + ' iken yirmi kez rastgele atama' +
+    '. Ortalama fark <b>' + (sum / 20).toFixed(1).replace('.', ',') + '</b>, en kötü fark <b>' + worst +
+    '</b> — yukarıda gösterilen. Karşı dengeleme her seferinde 0 ya da 1 verirdi.';
+});
+[A, B, N].forEach(r => r.addEventListener('input', () => {
+  $('aV').textContent = A.value; $('bV').textContent = B.value; $('nV').textContent = N.value;
+  drawCells(null);
+}));
+drawCells(null);
+
+/* ============ MODULE 2 : loop ordering ============ */
+const ROWS = 10;
+const VALUES = Array.from({ length: ROWS }, (_, i) => 22 + i * 8); // a clean ramp, like the book figure
+let mode = 'sequential';
+const fixedOrder = shuffle([...Array(ROWS).keys()]);
+
+function buildOrder(reps) {
+  const out = [];
+  for (let r = 0; r < reps; r++) {
+    if (r > 0) out.push(null);                       // separator
+    if (mode === 'sequential') out.push(...[...Array(ROWS).keys()]);
+    else if (mode === 'fixed') out.push(...fixedOrder);
+    else if (mode === 'random') out.push(...shuffle([...Array(ROWS).keys()]));
+    else for (let i = 0; i < ROWS; i++) out.push(Math.floor(Math.random() * ROWS));
+  }
+  return out;
+}
+function drawLoop() {
+  const reps = +$('repR').value;
+  const order = buildOrder(reps);
+  const wrapEl = $('loopbars');
+  wrapEl.innerHTML = '';
+  const counts = new Array(ROWS).fill(0);
+  order.forEach(i => {
+    const d = document.createElement('div');
+    if (i === null) { d.className = 'lb sep'; wrapEl.appendChild(d); return; }
+    counts[i]++;
+    d.className = 'lb';
+    d.style.height = (VALUES[i] / VALUES[ROWS - 1] * 100) + '%';
+    d.title = 'satır ' + (i + 1);
+    wrapEl.appendChild(d);
+  });
+  const cc = $('counts');
+  cc.innerHTML = '';
+  counts.forEach((c, i) => {
+    const s = document.createElement('div');
+    s.className = 'cchip' + (c === reps ? '' : ' off');
+    s.innerHTML = 'satır ' + (i + 1) + ' · <b>' + c + '×</b>';
+    cc.appendChild(s);
+  });
+  const uneven = counts.some(c => c !== reps);
+  const txt = {
+    sequential: 'Dosya her tekrarda aynı biçimde, yukarıdan aşağıya dolaşılır. Her satır tam ' + reps + ' kez kullanılır. Sıra tasarımın bir parçasıysa bunu kullanın — örneğin giderek uzayan bir sayı dizisi.',
+    fixed: 'Bir karışık sıra, sonra aynı karışık sıra yeniden. Katılımcıya rastgele görünür ama her katılımcı tam olarak aynı diziyi alır — sıranın kendisinin sabit tutulması gerektiğinde istediğiniz budur.',
+    random: 'Her tekrarda yeniden karıştırılır ama yine yerine koymadan örneklenir: her satır her tekrarda tam bir kez gelir. Dosyada ne dengelediyseniz dengeli kalır.',
+    full: 'Dosyanın tamamından yerine koyarak çekilir. Sayılara bakın — bazı satırlar ' + Math.max(...counts) + ' kez, bazıları ' + Math.min(...counts) + ' kez geldi. Koşul dosyasına kurduğunuz denge kayboldu.'
+  }[mode];
+  $('loopVerdict').innerHTML = txt + (uneven && mode !== 'full' ? '' : '');
+}
+document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll('.modes button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  drawLoop();
+}));
+$('repR').addEventListener('input', () => { $('repV').textContent = $('repR').value; drawLoop(); });
+drawLoop();
+
+/* ============ MODULE 3 : confound hunter ============ */
+const Q = [
+  {
+    t: 'Kafeinin dikkati artırıp artırmadığını merak ediyorsunuz. Kahve içenleri sabah, içmeyenleri öğleden sonra test ediyorsunuz.',
+    o: [
+      ['Günün saati grupla örtüşüyor, bu yüzden sonucu kafein kadar iyi açıklıyor.', 1,
+       'Doğru. Bulduğunuz her fark kafein de olabilir, sabah–öğleden sonra farkı da; veride ikisini ayıracak hiçbir şey yok. İki grubu da iki saatte test edin.'],
+      ['Etkiyi görmek için yeterince deneme yok.', 0,
+       'Buradaki sorun deneme sayısı değil. Bin denemeyle bile kafeini günün saatinden ayıramazdınız.'],
+      ['Yanıt tuşları karşı dengelenmemiş.', 0,
+       'Genel olarak gerçek bir kaygı, ama bu tasarımı bozan şey o değil.'],
+      ['Bir sorun yok — bu sıradan bir denekler arası çalışma.', 0,
+       'Denekler arası bir çalışma, ama gruplar aynı anda iki şeyde farklı.']
+    ]
+  },
+  {
+    t: 'Stroop görevinizde önce bütün uyumlu denemeler, sonra bütün uyumsuz denemeler geliyor.',
+    o: [
+      ['Alıştırma ve yorgunluk koşulla örtüşüyor.', 1,
+       'Doğru. Uyumsuz blok başladığında katılımcı ısınmış olur — blok bittiğinde de yorulmuştur. İki etki de artık "Stroop etkiniz"in parçası. Denemeleri karıştırın ya da blok sırasını karşı dengeleyin.'],
+      ['Kelimelerin uzunlukları farklı.', 0,
+       'Bu ayrı bir konu ve bu testin ilerisinde karşınıza çıkacak — ama bu tasarımın yanlışı o değil.'],
+      ['Örneklem çok küçük.', 0,
+       'Burada bozuk olan örneklem büyüklüğü değil, sıra.'],
+      ['Bir sorun yok — bloklamak standart uygulama.', 0,
+       'Bloklamak standart, ama sabit bir blok sırası değil. Bloklarsanız sırayı katılımcılar arasında karşı dengelersiniz.']
+    ]
+  },
+  {
+    t: 'Çalışmanızdaki her katılımcı kırmızı için D, sarı için K tuşuna basıyor. Eşleme hiç değişmiyor.',
+    o: [
+      ['Bir elin ya da parmağın avantajı her bir veri setine işlenmiş oluyor.', 1,
+       'Doğru. D tuşu K\'den daha hızlıysa, herkeste kırmızı sarıdan hızlı görünür. Eşlemeyi karşı dengeleyin: katılımcılarınızın yarısı tersini alsın. Sayı tekse artan kişi bir yuvarlama hatasıdır, felaket değil.'],
+      ['Günün saati yanıtla karışmış.', 0,
+       'Bu açıklamada değil — insanların ne zaman test edildiğine dair hiçbir şey söylenmedi.'],
+      ['Deneme sayısı çok düşük.', 0,
+       'Burada deneme sayısına dair bir bilgi yok. Sorun eşlemede.'],
+      ['Bir sorun yok — tuşlar keyfî.', 0,
+       'Tuşlar keyfî; tam da bu yüzden onları sabit bırakmak kaçınılabilir bir hata. Herkes için aynı olan keyfî bir seçim sistematik bir etkiye dönüşür.']
+    ]
+  },
+  {
+    t: 'Uyumsuz kelimeler 300 ms, uyumlu kelimeler 200 ms gösteriliyor, çünkü uyumsuz denemeler "daha zor ve daha çok zaman istiyor".',
+    o: [
+      ['Sunum süresi artık koşulla örtüşüyor.', 1,
+       'Doğru. Daha uzun görme süresi görevin kendisini değiştirir; bu yüzden tepki süresindeki her farkın iki açıklaması olur. Manipüle etmediğiniz her şeyi sabit tutun — deneysel kontrol budur.'],
+      ['Zorluk farkı önemsenmeyecek kadar küçük.', 0,
+       'Sorun zorluk farkının büyüklüğü değil. Sorun, onunla birlikte ikinci bir şeyin de değişmesi.'],
+      ['Burada tepki süresi hiç ölçülmemeli.', 0,
+       'Tepki süresi tam olarak doğru ölçüm. Bozuk olan, etrafındaki tasarım.'],
+      ['Bir sorun yok — süreler görevin gerektirdiğini yansıtıyor.', 0,
+       'Tasarımı koşula göre ayarlamak karşılaştırmayı kaybetmenin yoludur. İki koşul da daha çok zamana ihtiyaç duyuyorsa ikisine de daha çok zaman verin.']
+    ]
+  },
+  {
+    t: 'KIRMIZI, YEŞİL, MAVİ ve SARI kelimeleriyle Türkçe bir Stroop görevi kuruyorsunuz — yedi, beş, dört ve dört harf.',
+    o: [
+      ['Kelime uzunluğu renkle birlikte değişiyor; renge özgü her fark kısmen bir uzunluk etkisi.', 1,
+       'Doğru, ve bundan kaçmak zor: renk kelimelerinin uzunlukları her dilde farklıdır. Farklı renkler seçerek uzunlukları eşitleyebilir ya da renk renk analiz edebilirsiniz; ama en azından sınırlılıklarda belirtirsiniz. Bizim 1. hafta demomuzda da bu kusur var.'],
+      ['Türkçe Stroop görevleri için uygun değil.', 0,
+       'Gayet uygun. Stroop etkisi pek çok dilde gösterilmiştir.'],
+      ['Dört renk çok fazla.', 0,
+       'Dört yaygın bir sayı. Sorun renk sayısı değil.'],
+      ['Bir sorun yok — katılımcılar kelimeyi zaten okuyor.', 0,
+       'Kelimeyi okumamaları söylenir, ama okuma otomatik gerçekleşir — Stroop\'un bütün mantığı bu ve uzunluğun önemli olmasının sebebi de bu.']
+    ]
+  },
+  {
+    t: 'On dört kişilik bir sınıfta, görev değiştirme ölçüsünde oyun oynayanlarla oynamayanları karşılaştırmayı planlıyorsunuz: her grupta yedi kişi.',
+    o: [
+      ['Karıştırıcı değişken yok. Tasarım temiz ama gerçekçi bir etkiyi görmek için çok küçük.', 1,
+       'Doğru, ve akılda tutulmaya değer ayrım bu. Burada hiçbir şey hiçbir şeyle örtüşmüyor — çalışmanın gücü yalnızca düşük. Yediye karşı yedi, birkaç on milisaniyelik bir farkı ayırt edemez. Denek içi bir tasarım her katılımcıyı iki koşulda da verirdi.'],
+      ['Oyun deneyimi geçiş maliyetiyle karışmış.', 0,
+       'Oyun deneyimi ilgilenilen değişken, karıştırıcı değişken değil. Karıştırıcı değişken, değişmesini istemediğiniz bir şeydir.'],
+      ['Gruplar yaş bakımından farklı olacak.', 0,
+       'Olabilir, ama açıklamada buna dair bir şey yok — üstelik asıl sorundan ayrı bir sorun olurdu.'],
+      ['Bir sorun yok — on dört katılımcı sıradan bir sınıf çalışması.', 0,
+       'On dört kişi sıradan bir sınıf çalışması, ama yedişerli iki gruba bölünmüş hâli değil. On dördünü de her koşulda tutun.']
+    ]
+  },
+  {
+    t: 'Göreviniz iyi tasarlanmış ve tamamen karşı dengelenmiş. Koşul başına on deneme koşuyor ve 40 ms\'lik bir etki arıyorsunuz.',
+    o: [
+      ['Karıştırıcı değişken yok. On deneme, tahmini gürültünün eline bırakıyor.', 1,
+       'Doğru. Tek bir tepki süresi çok rastgele değişkenlik taşır ve onun ortalamasını almak bunun çoğunu gidermez. Aynı gerçek etki, güçlü biçimde negatiften gerçek değerinin iki katına kadar herhangi bir şey olarak geri dönebilir — 1. haftanın simülatörünün gösterdiği de bu. Küçük bir etkiyi görünür kılan, önce denemeler, sonra katılımcılar üzerinden ortalama almaktır.'],
+      ['Koşul başına on deneme bir karıştırıcı değişkendir.', 0,
+       'Deneme sayısı karıştırıcı değişken değildir. Koşullarınızla örtüşen bir şey yok — yalnızca veri çok az.'],
+      ['40 ms\'lik bir etki gerçek olamayacak kadar küçük.', 0,
+       'Bu dersteki etkilerin çoğu on milisaniyeler düzeyinde. Gerçekler; yalnızca görünmeleri için yeterince deneme gerekiyor.'],
+      ['Bir sorun yok — karşı dengeleme bunu halleder.', 0,
+       'Karşı dengeleme sizi karıştırıcı değişkenlerden korur. Gürültüye karşı hiçbir şey yapmaz.']
+    ]
+  }
+];
+
+let qi = 0, score = 0, answered = false;
+function renderQ() {
+  const q = Q[qi];
+  answered = false;
+  $('qNum').textContent = qi + 1;
+  $('qTot').textContent = Q.length;
+  $('qScore').textContent = score;
+  $('qText').textContent = q.t;
+  $('qFb').classList.remove('on');
+  $('nextBtn').disabled = true;
+  $('nextBtn').textContent = qi === Q.length - 1 ? 'Özeti gör' : 'Sonraki tasarım';
+  const box = $('qOpts');
+  box.innerHTML = '';
+  const opts = shuffle(q.o.slice());   // never let the answer sit in the same slot
+  opts.forEach(([text, ok, why]) => {
+    const b = document.createElement('button');
+    b.className = 'opt'; b.type = 'button'; b.textContent = text;
+    b.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      if (ok) score++;
+      [...box.children].forEach((el, k) => {
+        el.disabled = true;
+        if (opts[k][1]) el.classList.add('right');
+      });
+      if (!ok) b.classList.add('wrong');
+      $('qScore').textContent = score;
+      $('qFb').innerHTML = '<b>' + (ok ? 'Evet. ' : 'Bu değil. ') + '</b>' + why;
+      $('qFb').classList.add('on');
+      $('nextBtn').disabled = false;
+    });
+    box.appendChild(b);
+  });
+}
+$('nextBtn').addEventListener('click', () => {
+  if (qi < Q.length - 1) { qi++; renderQ(); }
+  else {
+    $('qText').textContent = Q.length + ' tasarımdan ' + score + ' tanesini doğru belirlediniz.';
+    $('qOpts').innerHTML = '';
+    $('qFb').innerHTML = '<b>Akılda tutmaya değer. </b>Bunların dördü karıştırıcı değişkendi — ' +
+      'istenmeyen bir şey koşullarla örtüşüyordu. İkisi güç sorunuydu: büyüklüğünün izin verdiğinden ' +
+      'fazlası beklenen temiz bir tasarım. Biri hem kaçınması zor hem de beyan edilmeye değerdi. ' +
+      'Bunları ayırt etmek, tasarımınızı mı düzelteceğinize yoksa veri mi ekleyeceğinize karar verir.';
+    $('qFb').classList.add('on');
+    $('nextBtn').disabled = true;
+  }
+});
+$('restartBtn').addEventListener('click', () => { qi = 0; score = 0; renderQ(); });
+renderQ();
+
+/* ============ MODULE 4 : design table and time budget ============ */
+['f0l', 'f1l', 'f2l'].forEach((id, k) => {
+  const sel = $(id);
+  const opts = k === 0 ? [2, 3, 4] : [1, 2, 3, 4];
+  opts.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v === 1 ? 'yok' : v;
+    sel.appendChild(o);
+  });
+  sel.value = k === 0 ? 2 : (k === 1 ? 4 : 1);
+  sel.addEventListener('change', budget);
+});
+['f0n', 'f1n', 'f2n'].forEach(id => $(id).addEventListener('input', budget));
+const BR = { rep: $('repR2'), spt: $('sptR'), prac: $('pracR'), ov: $('ovR'), lim: $('limR') };
+Object.values(BR).forEach(r => r.addEventListener('input', budget));
+
+const mmss = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+
+function budget() {
+  const facs = [0, 1, 2].map(k => ({
+    name: ($('f' + k + 'n').value || ('faktör ' + (k + 1))).trim(),
+    levels: +$('f' + k + 'l').value
+  })).filter(f => f.levels > 1);
+  [0, 1, 2].forEach(k => document.querySelectorAll('.fac')[k]
+    .classList.toggle('off', +$('f' + k + 'l').value === 1));
+
+  const reps = +BR.rep.value, spt = +BR.spt.value, prac = +BR.prac.value;
+  const ov = +BR.ov.value, lim = +BR.lim.value;
+  $('repV2').textContent = reps;
+  $('sptV').textContent = spt.toFixed(1).replace('.', ',');
+  $('pracV').textContent = prac;
+  $('ovV').textContent = ov + ' s';
+  $('limV').textContent = (lim / 60).toFixed(1).replace('.', ',') + ' dk';
+
+  const rows = facs.reduce((a, f) => a * f.levels, 1);
+  const main = rows * reps;
+  const total = main + prac;
+  const dur = total * spt + ov;
+  const perLevel = facs.length ? Math.round(main / facs[0].levels) : 0;
+
+  // time gauge
+  const overTime = dur > lim;
+  $('durV').textContent = mmss(dur);
+  $('gTime').className = 'gauge ' + (overTime ? 'bad' : 'ok');
+  const m1 = $('durMeter');
+  m1.classList.toggle('bad', overTime);
+  m1.querySelector('i').style.width = Math.min(100, dur / (lim * 1.4) * 100) + '%';
+  m1.querySelector('.limit').style.left = (1 / 1.4 * 100) + '%';
+  $('durT').textContent = overTime
+    ? 'Sınırı ' + mmss(dur - lim) + ' aşıyor. Rotasyondaki herkes bunu bekler.'
+    : mmss(lim - dur) + ' pay kalıyor.';
+
+  // trials gauge
+  const thin = perLevel < 30;
+  $('perV').textContent = perLevel;
+  $('perK').textContent = (facs.length ? facs[0].name : 'faktör 1') + ' düzeyi başına deneme';
+  $('gTrials').className = 'gauge ' + (thin ? 'bad' : 'ok');
+  const m2 = $('perMeter');
+  m2.classList.toggle('bad', thin);
+  m2.querySelector('i').style.width = Math.min(100, perLevel / 84 * 100) + '%';
+  m2.querySelector('.limit').style.left = (30 / 84 * 100) + '%';
+  $('perT').textContent = thin
+    ? 'İnce. Yaklaşık 30\'un altında tahmin sallanmaya başlar — 1. hafta, üçüncü sekmeye bakın.'
+    : 'Birkaç on milisaniyelik bir etki için rahat.';
+
+  // conditions table
+  const thead = $('condTable').querySelector('thead');
+  const tbody = $('condTable').querySelector('tbody');
+  thead.innerHTML = '<tr><th>#</th>' + facs.map(f => '<th>' + f.name + '</th>').join('') + '</tr>';
+  tbody.innerHTML = '';
+  const combos = facs.reduce((acc, f) => {
+    const out = [];
+    acc.forEach(a => { for (let i = 1; i <= f.levels; i++) out.push(a.concat(f.name + ' ' + i)); });
+    return out;
+  }, [[]]);
+  combos.slice(0, 40).forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="n">' + (i + 1) + '</td>' + c.map(v => '<td>' + v + '</td>').join('');
+    tbody.appendChild(tr);
+  });
+  if (combos.length > 40) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="' + (facs.length + 1) + '" class="note">… ve ' +
+      (combos.length - 40) + ' satır daha</td>';
+    tbody.appendChild(tr);
+  }
+  $('sumLine').innerHTML =
+    '<span>dosyadaki satır <b>' + rows + '</b></span>' +
+    '<span>× tekrar <b>' + reps + '</b></span>' +
+    '<span>+ alıştırma <b>' + prac + '</b></span>' +
+    '<span>= deneme <b>' + total + '</b></span>';
+}
+budget();
+</script>
+</body>
+</html>
