@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>5. Hafta Lab Bench — Hangi saat?</title>
+<style>
+  :root{
+    --deep:#065A82; --teal:#1C7293; --mid:#21295C; --ink:#16203D;
+    --amber:#D98A1F; --amber-soft:#FDF3E3;
+    --grey:#5B6478; --line:#D5DCE6; --panel:#EEF3F8; --page:#FFFFFF;
+    --scr:#808080; --okbg:#F2FAF4; --okline:#BBDCC4; --okink:#1F7A3D;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:Georgia,Cambria,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);background:var(--page);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 72px}
+  @media(max-width:600px){.wrap{padding:0 16px 56px}}
+  header.top{border-bottom:1px solid var(--line);background:var(--page);position:sticky;top:0;z-index:20}
+  .top-inner{max-width:1080px;margin:0 auto;padding:18px 24px 14px;display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;justify-content:space-between}
+  @media(max-width:600px){.top-inner{padding:14px 16px 12px}}
+  h1{font-family:var(--serif);font-size:22px;font-weight:700;margin:0;letter-spacing:-.2px}
+  .course{font-size:13px;color:var(--grey)}
+  section{padding-top:32px}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 6px;font-weight:700}
+  .lede{color:var(--grey);max-width:70ch;margin:0 0 24px;font-size:15px}
+  h3{font-size:14px;margin:0 0 9px;font-weight:600;color:var(--grey);text-transform:uppercase;letter-spacing:.06em}
+  .note{font-size:13px;color:var(--grey)}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  code{font-family:var(--mono);font-size:.92em;background:var(--panel);padding:1px 5px;border-radius:4px;color:var(--deep)}
+  .bar{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:24px}
+  .bar .lab{display:block;font-size:13px;color:var(--grey);margin-bottom:5px}
+  .ctrl label{display:flex;justify-content:space-between;font-size:13px;color:var(--grey);margin-bottom:4px;gap:14px}
+  .ctrl input[type=range]{width:100%;accent-color:var(--teal)}
+  .modes{display:flex;gap:6px;flex-wrap:wrap}
+  .modes button{font:inherit;font-size:13.5px;padding:8px 13px;border-radius:6px;border:1px solid var(--line);background:var(--page);color:var(--grey);cursor:pointer}
+  .modes button:hover{border-color:var(--teal);color:var(--ink)}
+  .modes button[aria-pressed="true"]{background:var(--deep);border-color:var(--deep);color:#fff;font-weight:600}
+  .modes button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+  .tl{position:relative;margin:26px 0 4px}
+  .lane{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;margin:6px 0}
+  .lane .who{font-family:var(--mono);font-weight:700;font-size:18px;text-align:center;color:var(--ink)}
+  .cells{display:flex;gap:2px}
+  .c{flex:1;min-width:0;height:34px;border:1px solid var(--line);border-radius:3px;background:#F7F9FB;cursor:pointer;position:relative}
+  .c.on{background:var(--teal);border-color:var(--teal)}
+  .c.both{background:var(--amber);border-color:var(--amber)}
+  .c.sel{outline:3px solid var(--ink);outline-offset:1px;z-index:2}
+  .ticks{display:grid;grid-template-columns:44px 1fr;gap:10px}
+  .tk{display:flex;gap:2px}
+  .tk span{flex:1;min-width:0;text-align:center;font-family:var(--mono);font-size:10.5px;color:#8A94A5;line-height:1.25;overflow:hidden}
+  .tk span b{display:block;color:var(--grey);font-weight:600}
+  .tk span em{font-style:normal}
+  .c.gap,.tk span.gap{flex:0 0 22px;border:none;background:none;cursor:default;color:#8A94A5;display:flex;align-items:center;justify-content:center}
+  @media(max-width:600px){.tk span em{display:none}.lane .who{font-size:15px}.lane,.ticks{grid-template-columns:34px 1fr;gap:6px}}
+  .mark{position:absolute;top:-8px;bottom:-8px;width:2px;background:var(--ink);opacity:.55;pointer-events:none}
+  .mark i{position:absolute;top:-18px;left:4px;font-style:normal;font-size:11px;color:var(--ink);white-space:nowrap;font-family:var(--mono)}
+
+  .twocol{display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start;margin-top:22px}
+  @media(max-width:860px){.twocol{grid-template-columns:1fr}}
+  .screen{background:var(--scr);border-radius:8px;height:150px;position:relative;user-select:none}
+  .box{position:absolute;top:50%;width:46px;height:46px;margin-top:-23px;border:3px solid #fff}
+  .box.l{left:16%} .box.r{right:16%}
+  .ctr{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-weight:700;font-family:var(--mono);font-size:34px;line-height:1;text-align:center}
+  .ctr .ov{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+  .scap{font-size:13px;color:var(--grey);margin-top:8px}
+  .scap b{color:var(--ink);font-family:var(--mono)}
+
+  .outs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:720px){.outs{grid-template-columns:1fr}}
+  .out{border:1px solid var(--line);border-radius:8px;padding:14px}
+  .out .v{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--deep);line-height:1.15}
+  .out .k{font-size:12.5px;color:var(--grey);margin-top:3px}
+  .out.bad{border-color:#F0D6A8;background:var(--amber-soft)} .out.bad .v{color:#A0610E}
+  .out.good{border-color:var(--okline);background:var(--okbg)} .out.good .v{color:var(--okink)}
+  .verdict{margin-top:14px;font-size:14.5px;padding:14px 16px;border-radius:8px;border:1px solid var(--line);background:#fff}
+  .verdict.bad{border-color:#F0D6A8;background:var(--amber-soft);color:#6B4708}
+  .verdict.good{border-color:var(--okline);background:var(--okbg);color:#1B5E31}
+
+  table.ref{border-collapse:collapse;width:100%;font-size:14px;margin-top:6px}
+  table.ref th{text-align:left;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--grey);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line)}
+  table.ref td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.ref td:first-child{white-space:nowrap}
+  .tag{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .tag.r{background:#E3EEF5;color:var(--deep)} .tag.o{background:var(--amber-soft);color:#8A5A10}
+  .refwrap{overflow-x:auto}
+  .callout{background:var(--amber-soft);border:1px solid #F0D6A8;border-radius:8px;padding:16px 18px;font-size:14px;color:#6B4708;margin-top:26px}
+  .callout b{color:#8A5A10}
+  .ex{font-size:11px;font-weight:700;color:var(--teal);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-inner">
+  <h1>5. Hafta Lab Bench</h1><div class="course">PSKO&nbsp;4514 · Bilişsel Deney Geliştirme</div>
+</div></header>
+<div class="wrap">
+<section>
+  <h2>Hangi saat? Süre (duration) ile zaman (time)</h2>
+  <p class="lede">Posner denemesinin başı: artı yarım saniye ekranda kalıyor, sonra yerini ok alıyor. Ok her zaman <code>time (s) 0.5</code> ile başlıyor. Artının bitişini üç farklı şekilde yazın ve ikisinin aynı karede yer değiştirip değiştirmediğine bakın.</p>
+
+  <div class="bar">
+    <div>
+      <span class="lab">Artının bitişi (Stop)</span>
+      <div class="modes" id="modes">
+        <button data-m="dur" aria-pressed="true">duration (s) &nbsp;<span class="num">0.5</span></button>
+        <button data-m="time" aria-pressed="false">time (s) &nbsp;<span class="num">0.5</span></button>
+        <button data-m="frames" aria-pressed="false">duration (frames) &nbsp;<span class="num">30</span></button>
+      </div>
+    </div>
+    <div>
+      <span class="lab">Ekran tazeleme hızı (refresh rate)</span>
+      <div class="modes" id="hz">
+        <button data-hz="60" aria-pressed="false">60 Hz</button>
+        <button data-hz="59.6" aria-pressed="true">59,6 Hz</button>
+        <button data-hz="120" aria-pressed="false">120 Hz</button>
+      </div>
+    </div>
+    <div class="ctrl" style="min-width:230px">
+      <label>İlk karenin gecikmesi <span class="num" id="dV">14 ms</span></label>
+      <input type="range" id="dR" min="2" max="16" step="1" value="14">
+    </div>
+  </div>
+
+  <div class="ex">ÖRNEK — 0,5 s'lik artı ve ardından gelen ok</div>
+  <h3>Kare kare (yalnızca 500 ms çevresi)</h3>
+  <div class="tl" id="tl">
+    <div class="lane"><div class="who">+</div><div class="cells" id="laneX"></div></div>
+    <div class="lane"><div class="who">&lt;&lt;</div><div class="cells" id="laneA"></div></div>
+    <div class="ticks"><div></div><div class="tk" id="ticks"></div></div>
+  </div>
+  <p class="note" style="margin-top:6px">Her kutu bir ekran karesi (frame). Altında karenin numarası ve rutinin başından itibaren ne zaman geldiği (ms; küçük ekranda gizli, kutuya dokunun). Turuncu kutu: artı ve ok aynı karede, üst üste. Bir kutuya tıklayın, o karede ekranda ne olduğunu görün. Rutinin ilk karesi rutin başlar başlamaz değil, bir sonraki ekran güncellemesinde gelir; gecikmesini kaydırıcıyla değiştirebilirsiniz.</p>
+
+  <div class="twocol">
+    <div>
+      <h3>Seçili karede ekran</h3>
+      <div class="screen"><div class="box l"></div><div class="box r"></div><div class="ctr" id="ctr"></div></div>
+      <div class="scap" id="scap"></div>
+    </div>
+    <div>
+      <h3>Sonuç</h3>
+      <div class="outs">
+        <div class="out" id="o1"><div class="v" id="v1">—</div><div class="k" id="k1"></div></div>
+        <div class="out" id="o2"><div class="v" id="v2">—</div><div class="k" id="k2"></div></div>
+        <div class="out" id="o3"><div class="v" id="v3">—</div><div class="k" id="k3"></div></div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:36px">Beş bitiş türü (Stop type)</h3>
+  <div class="refwrap"><table class="ref">
+    <thead><tr><th>Tür</th><th>Sayı ne demek</th><th>Saat nereden başlıyor</th><th>Ne zaman</th></tr></thead>
+    <tbody><tr><td><code>duration (s)</code></td><td>Göründükten sonra bu kadar saniye</td><td><span class='tag o'>bileşenin ilk karesi</span></td><td>Uzun ya da başka bir uyarana hizalı olması gerekmeyen süreler: boş ekran, teşekkür</td></tr><tr><td><code>time (s)</code></td><td>Rutinin bu saniyesinde kapan</td><td><span class='tag r'>rutinin başı</span></td><td>Aynı rutinde arka arkaya gelen uyaranlar: bir sonrakinin başlangıcıyla aynı sayıyı yazın</td></tr><tr><td><code>duration (frames)</code></td><td>Göründükten sonra bu kadar kare</td><td><span class='tag o'>bileşenin ilk karesi</span></td><td>Kısa ve kritik süreler; kaç kare göründüğü kesin, ama milisaniyesi ekran hızına bağlı</td></tr><tr><td><code>frame N</code></td><td>Rutinin N. karesinde kapan</td><td><span class='tag r'>rutinin başı</span></td><td>Nadiren; rutin başından kare saymak gerektiğinde</td></tr><tr><td><code>condition</code></td><td>Yazdığınız koşul doğru olunca kapan</td><td>—</td><td>Bir olaya bağlı bitiş (ör. yanıt gelince)</td></tr><tr><td><em>boş</em></td><td>Kendiliğinden hiç bitmez</td><td>—</td><td>Rutin başka bir şeyle bitecekse (ör. &quot;Force end of Routine&quot; işaretli bir tuş)</td></tr></tbody>
+  </table></div>
+  <p class="note" style="margin-top:10px">Başlangıç (Start) için üç tür var: <code>time (s)</code> ve <code>frame N</code> rutinin başından sayılır, <code>condition</code> bir koşula bağlıdır. Başlangıçta &quot;duration&quot; seçeneği yok.</p>
+
+  <div class="callout"><b>Kısaca:</b> <code>time (s)</code> ve <code>frame N</code> rutinin saatiyle ölçülür; <code>duration</code> bileşenin kendi saatiyle, yani ekranda ilk göründüğü kareden itibaren. Aynı rutinde biri biterken öteki başlıyorsa ikisini de rutinin saatine bağlayın: artının bitişi <code>time (s) 0.5</code>, okun başlangıcı <code>time (s) 0.5</code>.</div>
+</section>
+</div>
+<script>
+const L = {
+  fr: "kare",
+  frameTip: (k, t) => k + '. kare · ' + t + ' ms',
+  k1: ms => 'artı ekranda kaldı (≈ ' + ms + ' ms)',
+  at: k => k + '. kare',
+  k2: t => 'ok bu karede başladı (' + t + ' ms)',
+  k3over: ms => 'üst üste: artı ve ok birlikte (≈ ' + ms + ' ms)',
+  k3gap: ms => 'arada boşluk: ortada ne artı ne ok (≈ ' + ms + ' ms)',
+  k3ok: 'üst üste ya da boşluk yok: aynı karede geçiş',
+  scap: (k, t, x, a) => '<b>' + k + '. kare</b> · ' + t + ' ms · ' + (x && a ? 'artı ve ok birlikte' : x ? 'yalnızca artı' : a ? 'yalnızca ok' : 'ortada bir şey yok'),
+  verdict: (m, over, gap, d, hz, ms) => {
+      const H = String(hz).replace('.', ',');
+      if (m === 'dur') return over
+        ? '<b>duration (s):</b> artının 0,5 saniyesi ilk göründüğü kareden, yani rutinin başından ' + d + ' ms sonra başlıyor. Ok ise rutinin saatine göre 0,5. saniyede geliyor. ' + H + ' Hz\'de bu fark bir kare ediyor: ikisi bir kare üst üste.'
+        : '<b>duration (s):</b> bu ayarda üst üste binme yok, ama şans eseri. Artının süresi yine kendi ilk karesinden sayılıyor; tazeleme hızını ya da ilk karenin gecikmesini biraz değiştirin, örtüşme geri gelir.';
+      if (m === 'time') return '<b>time (s):</b> artı ve ok aynı saate, rutinin saatine bağlı. Artı 0,5. saniyede kapanıyor, ok 0,5. saniyede başlıyor; ilk karenin gecikmesi ya da ekran hızı ne olursa olsun aynı karede yer değiştiriyorlar.';
+      return gap
+        ? '<b>duration (frames):</b> artı tam 30 kare kaldı, ama ' + H + ' Hz\'de 30 kare yalnızca ' + ms + ' ms. Ok hâlâ 0,5. saniyede geliyor; arada ortası boş kareler var. Kare sayısı ekrana göre farklı süreye denk gelir.'
+        : over
+          ? '<b>duration (frames):</b> artı tam 30 kare kaldı (' + ms + ' ms), ama ilk karesi geç geldiği için ok gelirken bir kare daha ekranda.'
+          : '<b>duration (frames):</b> bu ekranda 30 kare 500 ms\'ye denk geliyor ve geçiş tam. 120 Hz\'yi seçin: aynı 30 kare 250 ms olur.';
+    },
+  dec: x => x.replace('.', ',')
+};
+const TOL = 1;            // PsychoPy frameTolerance = 0.001 s
+const X_STOP = 500, A_START = 500, NFR = 30;
+let mode = 'dur', hz = 59.6, d = 14, sel = null;
+const $ = id => document.getElementById(id);
+const fmt = x => L.dec(String(Math.round(x * 10) / 10));
+
+function sim() {
+  const T = 1000 / hz, f = k => d + k * T;
+  // cross starts on the routine's first frame (k = 0)
+  let kx = 0;
+  if (mode === 'dur')   { while (!(f(kx) > f(0) + X_STOP - TOL)) kx++; }
+  if (mode === 'time')  { while (!(f(kx) > X_STOP - TOL)) kx++; }
+  if (mode === 'frames'){ kx = NFR; }
+  let ka = 0; while (!(f(ka) >= A_START - TOL)) ka++;
+  return { T, f, kx, ka };
+}
+
+function render() {
+  const { T, f, kx, ka } = sim();
+  const a = Math.min(kx, ka), b = Math.max(kx, ka);
+  let idx = [];
+  if (b - a <= 8) { for (let k = Math.max(0, a - 4); k <= b + 3; k++) idx.push(k); }
+  else {
+    for (let k = Math.max(0, kx - 3); k <= kx + 1; k++) idx.push(k);
+    idx.push(null);
+    for (let k = ka - 2; k <= ka + 2; k++) idx.push(k);
+  }
+  const shownK = idx.filter(k => k !== null);
+  if (sel === null || !shownK.includes(sel)) sel = (kx > ka) ? ka : (kx === ka ? ka : kx);
+  const X = $('laneX'), A = $('laneA'), tk = $('ticks');
+  X.innerHTML = A.innerHTML = tk.innerHTML = '';
+  for (const k of idx) {
+    if (k === null) {
+      for (const lane of [X, A]) { const g = document.createElement('div'); g.className = 'c gap'; g.textContent = '…'; lane.appendChild(g); }
+      const s = document.createElement('span'); s.className = 'gap'; s.innerHTML = '<b>…</b>'; tk.appendChild(s);
+      continue;
+    }
+    const xOn = k < kx, aOn = k >= ka, both = xOn && aOn;
+    for (const [lane, on] of [[X, xOn], [A, aOn]]) {
+      const c = document.createElement('div');
+      c.className = 'c' + (on ? (both ? ' both' : ' on') : '') + (k === sel ? ' sel' : '');
+      c.dataset.k = k;
+      c.title = L.frameTip(k, fmt(f(k)));
+      c.onclick = () => { sel = k; render(); };
+      lane.appendChild(c);
+    }
+    const s = document.createElement('span');
+    s.innerHTML = '<b>' + k + '</b><em>' + fmt(f(k)) + '</em>';
+    tk.appendChild(s);
+  }
+  // 500 ms marker, placed inside the frame during which 500 ms falls
+  document.querySelectorAll('.mark').forEach(m => m.remove());
+  const kf = (500 - d) / T, k0 = Math.floor(kf), frac = kf - k0;
+  const cell = X.querySelector('[data-k="' + k0 + '"]');
+  if (cell) {
+    const r = cell.getBoundingClientRect(), tl = $('tl').getBoundingClientRect();
+    const m = document.createElement('div'); m.className = 'mark';
+    m.style.left = (r.left - tl.left + frac * r.width) + 'px';
+    m.innerHTML = '<i>500 ms</i>';
+    $('tl').appendChild(m);
+  }
+  // screen at selected frame
+  const xs = sel < kx, as = sel >= ka;
+  $('ctr').innerHTML = xs && as ? '<span class="ov">+</span><span class="ov">&lt;&lt;</span>' : (xs ? '+' : (as ? '&lt;&lt;' : ''));
+  $('scap').innerHTML = L.scap(sel, fmt(f(sel)), xs, as);
+  // outputs
+  const shown = kx, over = Math.max(0, kx - ka), gap = Math.max(0, ka - kx);
+  $('v1').textContent = shown + ' ' + L.fr; $('k1').textContent = L.k1(fmt(shown * T));
+  $('v2').textContent = L.at(ka); $('k2').textContent = L.k2(fmt(f(ka)));
+  const o3 = $('o3');
+  if (over) { $('v3').textContent = over + ' ' + L.fr; $('k3').textContent = L.k3over(fmt(over * T)); o3.className = 'out bad'; }
+  else if (gap) { $('v3').textContent = gap + ' ' + L.fr; $('k3').textContent = L.k3gap(fmt(gap * T)); o3.className = 'out bad'; }
+  else { $('v3').textContent = '0'; $('k3').textContent = L.k3ok; o3.className = 'out good'; }
+  const v = $('verdict');
+  v.className = 'verdict ' + (over || gap ? 'bad' : 'good');
+  v.innerHTML = L.verdict(mode, over, gap, fmt(d), hz, fmt(shown * T));
+}
+
+document.querySelectorAll('#modes button').forEach(b => b.onclick = () => {
+  mode = b.dataset.m; sel = null;
+  document.querySelectorAll('#modes button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
+document.querySelectorAll('#hz button').forEach(b => b.onclick = () => {
+  hz = +b.dataset.hz; sel = null;
+  document.querySelectorAll('#hz button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
+$('dR').oninput = e => { d = +e.target.value; $('dV').textContent = d + ' ms'; sel = null; render(); };
+window.addEventListener('resize', render);
+render();
+</script>
+</body>
+</html>
